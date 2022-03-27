@@ -10,9 +10,7 @@ import demo
 import yaml
 
 
-
-
-def get_rect(net, images, height_size):
+def get_rect(net, images, height_size,use_cpu=True):
     net = net.eval()
 
     stride = 8
@@ -21,7 +19,7 @@ def get_rect(net, images, height_size):
     for image in images:
         rect_path = image.replace('.%s' % (image.split('.')[-1]), '_rect.txt')
         img = cv2.imread(image, cv2.IMREAD_COLOR)
-        heatmaps, pafs, scale, pad = demo.infer_fast(net, img, height_size, stride, upsample_ratio, cpu=True)
+        heatmaps, pafs, scale, pad = demo.infer_fast(net, img, height_size, stride, upsample_ratio, cpu=use_cpu)
 
         total_keypoints_num = 0
         all_keypoints_by_type = []
@@ -80,12 +78,10 @@ checkpoint = torch.load('checkpoint_iter_370000.pth', map_location='cpu')
 load_state(net, checkpoint)
 
 
-res = 256
-port = 6969
+CONFIG = None
 with open("../config.yaml", "r") as yamlfile:
     data = yaml.load(yamlfile, Loader=yaml.FullLoader)
-    res = data['resolution']
-    port = data['preprocessor_port']
+    CONFIG = data
 
 
 app = Flask(__name__)
@@ -96,10 +92,13 @@ def hello():
 
 @app.route('/<filename>', methods=['GET'])
 def do(filename):
-    get_rect(net, ['../pifuhd/sample_images/'+filename], int(res))
+    if CONFIG["use_GPU"] == 0:
+        get_rect(net, ['../pifuhd/sample_images/'+filename], int(CONFIG["resolution"],True))
+    else: 
+        get_rect(net.cuda(), ['../pifuhd/sample_images/'+filename], int(CONFIG["resolution"],False))
     return f'Finish processing {filename}'
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=port,debug=True)
+    app.run(host='0.0.0.0', port=CONFIG["preprocessor_port"],debug=True)
     
     
