@@ -93,10 +93,10 @@ def hello():
 @app.route('/<filename>', methods=['GET'])
 def do(filename):
     if CONFIG["use_gpu"] == 0:
-        get_rect(net, ['../pifuhd/sample_images/'+filename], int(CONFIG["resolution"]),True)
+        get_rect(net, [CONFIG["pifu_input_dir"]+filename], int(CONFIG["resolution"]),True)
     else: 
-        get_rect(net.cuda(), ['../pifuhd/sample_images/'+filename], int(CONFIG["resolution"]),False)
-    return f'Finish processing {filename}'
+        get_rect(net.cuda(), [CONFIG["pifu_input_dir"]+filename], int(CONFIG["resolution"]),False)
+    return "a valid response"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=CONFIG["preprocessor_port"],debug=True)
